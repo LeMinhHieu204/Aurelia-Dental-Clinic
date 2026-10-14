@@ -1,0 +1,82 @@
+<?php
+
+use App\Http\Controllers\Admin\AppointmentController;
+use App\Http\Controllers\Admin\AuthController;
+use App\Http\Controllers\Admin\AuditLogController;
+use App\Http\Controllers\Admin\AvailabilityController;
+use App\Http\Controllers\Admin\CalendarController;
+use App\Http\Controllers\Admin\ContentController;
+use App\Http\Controllers\Admin\ContentSectionController;
+use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\MediaController;
+use App\Http\Controllers\Admin\PatientController;
+use App\Http\Controllers\PublicController;
+use Illuminate\Support\Facades\Route;
+
+Route::get('/', [PublicController::class, 'home'])->name('home');
+Route::get('/treatments', [PublicController::class, 'treatments'])->name('treatments.index');
+Route::get('/treatments/{treatment:slug}', [PublicController::class, 'treatment'])->name('treatments.show');
+Route::get('/doctors', [PublicController::class, 'doctors'])->name('doctors.index');
+Route::get('/doctors/{doctor:slug}', [PublicController::class, 'doctor'])->name('doctors.show');
+Route::get('/reviews', [PublicController::class, 'reviews'])->name('reviews');
+Route::get('/contact', [PublicController::class, 'contact'])->name('contact');
+Route::post('/contact', [PublicController::class, 'storeInquiry'])->middleware('throttle:10,1')->name('contact.store');
+Route::get('/book-appointment', [PublicController::class, 'book'])->name('booking');
+Route::post('/book-appointment', [PublicController::class, 'storeAppointment'])->middleware('throttle:5,10')->name('booking.store');
+Route::view('/privacy-policy', 'legal', ['title' => 'Privacy notice'])->name('privacy');
+Route::view('/terms-of-service', 'legal', ['title' => 'Terms of use'])->name('terms');
+Route::view('/accessibility', 'legal', ['title' => 'Accessibility'])->name('accessibility');
+
+Route::prefix('admin')->name('admin.')->group(function () {
+    Route::get('/login', [AuthController::class, 'create'])->name('login');
+    Route::post('/login', [AuthController::class, 'store'])->middleware('throttle:5,1')->name('login.store');
+    Route::post('/logout', [AuthController::class, 'destroy'])->middleware('auth')->name('logout');
+
+    Route::middleware(['auth', 'admin'])->group(function () {
+        Route::get('/', DashboardController::class)->name('dashboard');
+        Route::get('/appointments', [AppointmentController::class, 'index'])->middleware('permission:appointments.manage')->name('appointments.index');
+        Route::get('/appointments/{appointment}', [AppointmentController::class, 'show'])->middleware('permission:appointments.manage|calendar.own')->name('appointments.show');
+        Route::patch('/appointments/{appointment}/details', [AppointmentController::class, 'updateDetails'])->middleware('permission:appointments.manage')->name('appointments.details');
+        Route::patch('/appointments/{appointment}/status', [AppointmentController::class, 'updateStatus'])->middleware('permission:appointments.manage')->name('appointments.status');
+        Route::get('/calendar', [CalendarController::class, 'index'])->middleware('permission:calendar.manage|calendar.own')->name('calendar');
+        Route::get('/availability', [AvailabilityController::class, 'index'])->middleware('permission:calendar.manage')->name('availability');
+        Route::post('/availability', [AvailabilityController::class, 'storeAvailability'])->middleware('permission:calendar.manage')->name('availability.store');
+        Route::delete('/availability/{availability}', [AvailabilityController::class, 'destroyAvailability'])->middleware('permission:calendar.manage')->name('availability.destroy');
+        Route::post('/availability/blocks', [AvailabilityController::class, 'storeBlock'])->middleware('permission:calendar.manage')->name('availability.blocks.store');
+        Route::delete('/availability/blocks/{block}', [AvailabilityController::class, 'destroyBlock'])->middleware('permission:calendar.manage')->name('availability.blocks.destroy');
+        Route::get('/doctors', [ContentController::class, 'doctors'])->middleware('permission:doctors.manage')->name('doctors');
+        Route::post('/doctors', [ContentController::class, 'storeDoctor'])->middleware('permission:doctors.manage')->name('doctors.store');
+        Route::patch('/doctors/{doctor}', [ContentController::class, 'updateDoctor'])->middleware('permission:doctors.manage')->name('doctors.update');
+        Route::patch('/doctors/{doctor}/toggle', [ContentController::class, 'toggleDoctor'])->middleware('permission:doctors.manage')->name('doctors.toggle');
+        Route::patch('/doctors/{doctor}/archive', [ContentController::class, 'archiveDoctor'])->middleware('permission:doctors.manage')->name('doctors.archive');
+        Route::get('/treatments', [ContentController::class, 'treatments'])->middleware('permission:treatments.manage')->name('treatments');
+        Route::post('/treatments', [ContentController::class, 'storeTreatment'])->middleware('permission:treatments.manage')->name('treatments.store');
+        Route::patch('/treatments/{treatment}', [ContentController::class, 'updateTreatment'])->middleware('permission:treatments.manage')->name('treatments.update');
+        Route::patch('/treatments/{treatment}/toggle', [ContentController::class, 'toggleTreatment'])->middleware('permission:treatments.manage')->name('treatments.toggle');
+        Route::patch('/treatments/{treatment}/archive', [ContentController::class, 'toggleTreatmentArchive'])->middleware('permission:treatments.manage')->name('treatments.archive');
+        Route::get('/locations', [ContentController::class, 'locations'])->middleware('permission:locations.manage')->name('locations');
+        Route::post('/locations', [ContentController::class, 'storeLocation'])->middleware('permission:locations.manage')->name('locations.store');
+        Route::patch('/locations/{location}', [ContentController::class, 'updateLocation'])->middleware('permission:locations.manage')->name('locations.update');
+        Route::get('/reviews', [ContentController::class, 'reviews'])->middleware('permission:reviews.manage')->name('reviews');
+        Route::patch('/reviews/{review}', [ContentController::class, 'updateReview'])->middleware('permission:reviews.manage')->name('reviews.update');
+        Route::patch('/reviews/{review}/toggle', [ContentController::class, 'toggleReview'])->middleware('permission:reviews.manage')->name('reviews.toggle');
+        Route::delete('/reviews/{review}', [ContentController::class, 'destroyReview'])->middleware('permission:reviews.manage')->name('reviews.destroy');
+        Route::get('/inquiries', [ContentController::class, 'inquiries'])->middleware('permission:inquiries.manage')->name('inquiries');
+        Route::patch('/inquiries/{inquiry}', [ContentController::class, 'updateInquiry'])->middleware('permission:inquiries.manage')->name('inquiries.update');
+        Route::get('/patients', [PatientController::class, 'index'])->middleware('permission:patients.view')->name('patients');
+        Route::get('/patients/{patient}', [PatientController::class, 'show'])->middleware('permission:patients.view')->name('patients.show');
+        Route::patch('/patients/{patient}', [PatientController::class, 'update'])->middleware('permission:patients.view')->name('patients.update');
+        Route::patch('/patients/{patient}/anonymize', [PatientController::class, 'anonymize'])->middleware('permission:patients.view')->name('patients.anonymize');
+        Route::get('/media', [MediaController::class, 'index'])->middleware('permission:media.manage')->name('media');
+        Route::post('/media', [MediaController::class, 'store'])->middleware('permission:media.manage')->name('media.store');
+        Route::patch('/media/{media}', [MediaController::class, 'update'])->middleware('permission:media.manage')->name('media.update');
+        Route::patch('/media/{media}/replace', [MediaController::class, 'replace'])->middleware('permission:media.manage')->name('media.replace');
+        Route::delete('/media/{media}', [MediaController::class, 'destroy'])->middleware('permission:media.manage')->name('media.destroy');
+        Route::get('/content', [ContentSectionController::class, 'index'])->middleware('permission:content.manage')->name('content');
+        Route::post('/content', [ContentSectionController::class, 'store'])->middleware('permission:content.manage')->name('content.store');
+        Route::patch('/content/{section}', [ContentSectionController::class, 'update'])->middleware('permission:content.manage')->name('content.update');
+        Route::get('/settings', [ContentController::class, 'settings'])->middleware('permission:settings.manage')->name('settings');
+        Route::patch('/settings', [ContentController::class, 'updateSettings'])->middleware('permission:settings.manage')->name('settings.update');
+        Route::get('/audit-logs', [AuditLogController::class, 'index'])->middleware('permission:audit.view')->name('audit-logs');
+    });
+});

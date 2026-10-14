@@ -1,0 +1,12 @@
+@extends('layouts.admin', ['title' => 'Reviews'])
+
+@section('content')
+<div class="admin-head"><div><p class="eyebrow">Moderation</p><h1>Reviews</h1><p class="muted">Only permissioned patient stories may be published. No fictional reviews are generated.</p></div></div>
+<div class="admin-panel"><table class="admin-table"><thead><tr><th>Reviewer</th><th>Content</th><th>Permission/source</th><th>Publication</th><th>Actions</th></tr></thead><tbody>
+@forelse($reviews as $review)
+    <tr><td>{{ $review->approved_name }}<br>{{ $review->location_label }}</td><td>{{ $review->body }}</td><td>{{ $review->permission_granted ? 'Granted' : 'Missing' }}<br>{{ $review->source ?: 'Source not recorded' }}</td><td><span class="status-pill">{{ $review->is_published ? 'Published' : 'Draft' }}</span></td><td><details><summary>Edit</summary><form class="admin-form" method="POST" action="{{ route('admin.reviews.update', $review) }}">@csrf @method('PATCH')<div class="field"><label>Name</label><input name="approved_name" value="{{ $review->approved_name }}" required></div><div class="field"><label>Location label</label><input name="location_label" value="{{ $review->location_label }}"></div><div class="field"><label>Source</label><input name="source" value="{{ $review->source }}"></div><div class="field"><label>Rating</label><input type="number" min="1" max="5" name="rating" value="{{ $review->rating }}"></div><div class="field field-full"><label>Review</label><textarea name="body" required>{{ $review->body }}</textarea></div><div class="field"><label>Permission</label><select name="permission_granted"><option value="1" @selected($review->permission_granted)>Granted</option><option value="0" @selected(! $review->permission_granted)>Missing</option></select></div><div class="field"><label>Publish</label><select name="is_published"><option value="1" @selected($review->is_published)>Published</option><option value="0" @selected(! $review->is_published)>Draft</option></select></div><div class="field" style="justify-content:end"><button class="btn btn-primary">Save review</button></div></form></details><form method="POST" action="{{ route('admin.reviews.destroy', $review) }}" style="margin-top:8px">@csrf @method('DELETE')<button class="btn btn-outline" onclick="return confirm('Anonymize and unpublish this review?')">Anonymize</button></form></td></tr>
+@empty
+    <tr><td colspan="5">No reviews to moderate.</td></tr>
+@endforelse
+</tbody></table>{{ $reviews->links() }}</div>
+@endsection

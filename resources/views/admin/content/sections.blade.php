@@ -1,0 +1,16 @@
+@extends('layouts.admin', ['title' => 'Website Content'])
+
+@section('content')
+<div class="admin-head"><div><p class="eyebrow">Website CMS</p><h1>Website content</h1><p class="muted">Content is escaped by default. Do not paste scripts or unapproved clinical claims.</p></div></div>
+<div class="admin-panel">
+    <h2 style="font-size:30px">Create section</h2>
+    <form class="admin-form" method="POST" action="{{ route('admin.content.store') }}" style="margin-top:18px">@csrf<div class="field"><label for="key">Key</label><input id="key" name="key" placeholder="home.hero" required></div><div class="field"><label for="title">Title</label><input id="title" name="title" required></div><div class="field"><label for="image_url">Image from media library</label><select id="image_url" name="image_url"><option value="">No image</option>@foreach($mediaAssets as $asset)<option value="{{ Storage::disk($asset->disk ?: 'public')->url($asset->path) }}">{{ $asset->filename }} — {{ $asset->alt_text }}</option>@endforeach</select></div><div class="field field-full"><label for="body">Body</label><textarea id="body" name="body"></textarea></div><div class="field" style="justify-content:end"><button class="btn btn-primary">Create draft</button></div></form>
+</div>
+<div class="admin-panel">
+    @forelse($sections as $section)
+        <details class="admin-edit-card" style="margin-bottom:12px"><summary>{{ $section->key }} <span class="status-pill">{{ $section->is_published ? 'Published' : 'Draft' }}</span></summary><form class="admin-form" method="POST" action="{{ route('admin.content.update', $section) }}" style="margin-top:18px">@csrf @method('PATCH')<div class="field"><label for="title-{{ $section->id }}">Title</label><input id="title-{{ $section->id }}" name="title" value="{{ $section->title }}" required></div><div class="field"><label for="image-{{ $section->id }}">Image from media library</label><select id="image-{{ $section->id }}" name="image_url"><option value="">No image</option>@foreach($mediaAssets as $asset)<option value="{{ Storage::disk($asset->disk ?: 'public')->url($asset->path) }}" @selected($section->image_url === Storage::disk($asset->disk ?: 'public')->url($asset->path))>{{ $asset->filename }} — {{ $asset->alt_text }}</option>@endforeach</select></div><div class="field"><label for="sort-{{ $section->id }}">Order</label><input id="sort-{{ $section->id }}" type="number" min="0" name="sort_order" value="{{ $section->sort_order }}" required></div><div class="field"><label for="published-{{ $section->id }}">Publication</label><select id="published-{{ $section->id }}" name="is_published"><option value="1" @selected($section->is_published)>Published</option><option value="0" @selected(! $section->is_published)>Draft</option></select></div><div class="field field-full"><label for="body-{{ $section->id }}">Body</label><textarea id="body-{{ $section->id }}" name="body">{{ $section->body }}</textarea></div><div class="field field-full"><label for="seo-{{ $section->id }}">SEO description</label><input id="seo-{{ $section->id }}" name="seo_description" value="{{ $section->seo_description }}"></div><div class="field" style="justify-content:end"><button class="btn btn-primary">Save section</button></div></form></details>
+    @empty
+        <p class="notice">No content sections created.</p>
+    @endforelse
+</div>
+@endsection
