@@ -9,6 +9,7 @@ use App\Models\DoctorAvailability;
 use App\Models\Inquiry;
 use App\Models\Location;
 use App\Models\MediaAsset;
+use App\Models\Patient;
 use App\Models\Role;
 use App\Models\Review;
 use App\Models\SiteSetting;
@@ -349,6 +350,40 @@ class ExampleTest extends TestCase
         $this->actingAs($receptionist)->get(route('admin.patients'))->assertOk();
         $this->actingAs($receptionist)->get(route('admin.media'))->assertForbidden();
         $this->actingAs($receptionist)->get(route('admin.audit-logs'))->assertForbidden();
+    }
+
+    public function test_patient_write_actions_require_distinct_permissions(): void
+    {
+        $patient = Patient::create(['full_name' => 'Permission Patient', 'email' => 'permission@example.com', 'phone' => '+1 555 0199']);
+        $receptionist = User::create([
+            'name' => 'Patient Receptionist',
+            'email' => 'patient-receptionist@example.com',
+            'password' => 'not-used',
+            'role_id' => Role::where('name', 'receptionist')->value('id'),
+        ]);
+
+        $this->actingAs($receptionist)
+            ->patch(route('admin.patients.update', $patient), ['full_name' => 'Changed', 'email' => 'changed@example.com', 'phone' => '+1 555 0101'])
+            ->assertForbidden();
+        $this->actingAs($receptionist)
+            ->patch(route('admin.patients.anonymize', $patient))
+            ->assertForbidden();
+        $this->assertDatabaseHas('patients', ['id' => $patient->id, 'full_name' => 'Permission Patient']);
+
+        $admin = User::create([
+            'name' => 'Patient Admin',
+            'email' => 'patient-admin@example.com',
+            'password' => 'not-used',
+            'role_id' => Role::where('name', 'admin')->value('id'),
+        ]);
+        $this->actingAs($admin)
+            ->patch(route('admin.patients.update', $patient), ['full_name' => 'Updated Patient', 'email' => 'updated@example.com', 'phone' => '+1 555 0102'])
+            ->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('patients', ['id' => $patient->id, 'full_name' => 'Updated Patient', 'email' => 'updated@example.com']);
+
+        $this->actingAs($admin)->patch(route('admin.patients.anonymize', $patient))->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('patients', ['id' => $patient->id, 'full_name' => 'Anonymized patient', 'phone' => 'REDACTED']);
+        $this->assertDatabaseHas('audit_logs', ['action' => 'patient.anonymized', 'auditable_id' => $patient->id]);
     }
 
     public function test_invalid_appointment_state_transition_is_rejected(): void

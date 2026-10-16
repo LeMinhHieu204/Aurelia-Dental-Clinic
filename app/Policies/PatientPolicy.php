@@ -19,6 +19,11 @@ class PatientPolicy
 
     public function update(User $user, Patient $patient): bool
     {
-        return $user->hasPermission('patients.view');
+        return $user->hasPermission('patients.update');
+    }
+
+    public function anonymize(User $user, Patient $patient): bool
+    {
+        return $user->hasPermission('patients.anonymize');
     }
 }

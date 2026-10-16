@@ -7,6 +7,7 @@ use App\Models\AuditLog;
 use App\Models\Patient;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -43,10 +44,12 @@ class PatientController extends Controller
 
     public function anonymize(Patient $patient): RedirectResponse
     {
-        $this->authorize('update', $patient);
+        $this->authorize('anonymize', $patient);
 
-        $patient->update(['full_name' => 'Anonymized patient', 'email' => 'anonymized+'.Str::lower(Str::random(20)).'@example.invalid', 'phone' => 'REDACTED']);
-        AuditLog::record('patient.anonymized', $patient, ['retention_action' => 'contact_details_redacted']);
+        DB::transaction(function () use ($patient): void {
+            $patient->update(['full_name' => 'Anonymized patient', 'email' => 'anonymized+'.Str::lower(Str::random(20)).'@example.invalid', 'phone' => 'REDACTED']);
+            AuditLog::record('patient.anonymized', $patient, ['retention_action' => 'contact_details_redacted']);
+        });
         return redirect()->route('admin.patients')->with('success', 'Patient contact details anonymized; booking history was preserved.');
     }
 }

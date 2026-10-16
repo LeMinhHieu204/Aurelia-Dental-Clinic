@@ -29,7 +29,7 @@ class User extends Authenticatable
     {
         $permissions = [
             'super_admin' => ['*'],
-            'admin' => ['appointments.manage', 'calendar.manage', 'doctors.manage', 'treatments.manage', 'locations.manage', 'patients.view', 'inquiries.manage', 'reviews.manage', 'media.manage', 'content.manage', 'settings.manage', 'audit.view'],
+            'admin' => ['appointments.manage', 'calendar.manage', 'doctors.manage', 'treatments.manage', 'locations.manage', 'patients.view', 'patients.update', 'patients.anonymize', 'inquiries.manage', 'reviews.manage', 'media.manage', 'content.manage', 'settings.manage', 'audit.view'],
             'staff' => ['appointments.manage', 'calendar.manage', 'patients.view', 'inquiries.manage', 'reviews.manage'],
             'receptionist' => ['appointments.manage', 'calendar.manage', 'patients.view', 'inquiries.manage'],
             'doctor' => ['calendar.own'],

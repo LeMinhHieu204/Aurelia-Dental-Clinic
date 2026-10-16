@@ -65,8 +65,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::patch('/inquiries/{inquiry}', [ContentController::class, 'updateInquiry'])->middleware('permission:inquiries.manage')->name('inquiries.update');
         Route::get('/patients', [PatientController::class, 'index'])->middleware('permission:patients.view')->name('patients');
         Route::get('/patients/{patient}', [PatientController::class, 'show'])->middleware('permission:patients.view')->name('patients.show');
-        Route::patch('/patients/{patient}', [PatientController::class, 'update'])->middleware('permission:patients.view')->name('patients.update');
-        Route::patch('/patients/{patient}/anonymize', [PatientController::class, 'anonymize'])->middleware('permission:patients.view')->name('patients.anonymize');
+        Route::patch('/patients/{patient}', [PatientController::class, 'update'])->middleware('permission:patients.update')->name('patients.update');
+        Route::patch('/patients/{patient}/anonymize', [PatientController::class, 'anonymize'])->middleware('permission:patients.anonymize')->name('patients.anonymize');
         Route::get('/media', [MediaController::class, 'index'])->middleware('permission:media.manage')->name('media');
         Route::post('/media', [MediaController::class, 'store'])->middleware('permission:media.manage')->name('media.store');
         Route::patch('/media/{media}', [MediaController::class, 'update'])->middleware('permission:media.manage')->name('media.update');
